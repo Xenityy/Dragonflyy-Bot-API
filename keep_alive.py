@@ -8,7 +8,7 @@ app = Flask('')
 
 @app.route('/')
 def home():
-    return "<h1>-Dragonflyy is online!</h1><p1><a href='https://stats.uptimerobot.com/AWR8LS9Owx'>UptimeRobot Server Status</a>"
+    return open('site.html','r').read()
 
 def run():
   app.run(host='0.0.0.0',port=8080)

@@ -8,8 +8,6 @@ class Get:
     def __init__(self,user):
       self.user=user
       self.json=Get.read('https://api.scratch.mit.edu/users/'+user)
-    def json(self):
-      return self.json
     def id(self):
       return self.json['id']
     def scratchteam(self):
@@ -17,11 +15,11 @@ class Get:
     def joindate(self):
       return self.json['history']['joined']
     def status(self):
-      return self.json['status']
+      return self.json['profile']['status']
     def bio(self):
-      return self.json['bio']
+      return self.json['profile']['bio']
     def country(self):
-      return self.json['country']
+      return self.json['profile']['country']
     def messages(self):
       return Get.read('https://api.scratch.mit.edu/users/'+self.user+'/messages/count')['count']
     def projects(self):
@@ -31,15 +29,12 @@ class Get:
         ids.append(project['id'])
       return ids
     def comment(self):
-      try:
-        Info=urlopen('https://scratch.mit.edu/site-api/comments/user/'+self.user).read().decode("utf-8")
-        Message=Info[Info.index('<div class="content">'):Info.index('<span class="time"')]
-        Message=Message[Message.index('>')+1:Message.index('/')-1]
-        Message=Message.strip()
-        Author=Info[Info.index('<a href="/users/')+16:Info.index('" id')]
-        return json.loads('{"Author":"'+Author+'","Message":"'+Message+'"}')
-      except:
-        return json.loads('{"Author":"",Message:""')
+      Info=urlopen('https://scratch.mit.edu/site-api/comments/user/'+self.user).read().decode("utf-8")
+      Message=Info[Info.index('<div class="content">'):Info.index('<span class="time"')]
+      Message=Message[Message.index('>')+1:Message.index('/')-1]
+      Message=Message.strip()
+      Author=Info[Info.index('<a href="/users/')+16:Info.index('" id')]
+      return json.loads('{"Author":"'+Author+'","Message":"'+Message+'"}')
     def favorites(self):
       Info=Get.read('https://api.scratch.mit.edu/users/'+self.user+'/favorites')
       ids=[]
@@ -53,8 +48,6 @@ class Get:
     def __init__(self,ProjID):
       self.ProjID=ProjID
       self.json=Get.read('https://api.scratch.mit.edu/projects/'+str(ProjID))
-    def json(self):
-      return self.json
     def title(self):
       return self.json['title']
     def description(self):
@@ -65,7 +58,7 @@ class Get:
       return self.json['author']['username']
     def created(self):
       return self.json['history']['created']
-    def modfied(self):
+    def modified(self):
       return self.json['history']['modified']
     def shared(self):
       return self.json['history']['shared']
@@ -92,6 +85,7 @@ class Get:
       return json.loads('{"Author":"'+Author+'","Message":"'+Message+'"}')
     def main(self):
       return 'Link: https://scratch.mit.edu/projects/'+str(self.ProjID)+', Author: '+self.author()+', Name: '+self.title()+', Views: '+str(self.views())+', Favorites: '+str(self.favorites())+', Loves: '+str(self.loves())
+  
   class Studio:
     def __init__(self,StudioID):
       self.StudioID=StudioID
@@ -105,15 +99,15 @@ class Get:
     def modified(self):
       return self.json['history']['modified']
     def main(self):
-      return 'Link: https://scratch.mit.edu/studios/'+str(self.StudioID)+', Title: '+self.title()+', Owner: '+self.owner()+', Last modified: '+str(self.modified())+', Favorites: '
+      return 'Link: https://scratch.mit.edu/studios/'+str(self.StudioID)+', Title: '+self.title()+', Owner: '+self.owner()+', Last modified: '+str(self.modified())
 
 class Send:
   def __init__(self,username,password):
     self.username=username
     self.password=password
-    Send.scratch=scratchapi.ScratchUserSession(username,password)
+    self.scratch=scratchapi.ScratchUserSession(username,password)
   def SetVar(self,projId,name,value):
-    Info=[str(projId),'"'+self.username+'"','"'+self.password+'"','"☁ '+name+'"',str(value)]
+    Info=[str(projId),'"'+self.username+'"','"'+self.password+'"','"☁ '+name+'"','"'+str(value)+'"']
     with open('new.js','w') as file:
       file.write('''var fs = require('fs');
 var scratch = require('scratch-api');
@@ -140,10 +134,9 @@ var scratch = require('scratch-api');
     self.scratch.users.unfollow(user)
   def invite(self,StudioID,user):
     self.scratch._studios_invite(StudioID,user)
-  def comment(self,comment,location,location2):
-    if location=='Profile':
-      self.scratch.users.comment(location2,comment)
-    elif location=='Project':
-      self.scratch.projects.comment(location2,comment) 
-    elif location=='Studio':
-      self.scratch.studios.comment(location2,comment)
+  def Profile(self,user,comment):
+    self.scratch.users.comment(user,comment)
+  def Project(self,ProjID,comment):
+    self.scratch.projects.comment(ProjID,comment)
+  def Studio(self,StudioID,comment):
+    self.scratch.studios.send(StudioID,comment)
